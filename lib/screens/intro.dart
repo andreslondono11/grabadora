@@ -3,8 +3,9 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:permission_handler/permission_handler.dart';
-// import 'package:shared_preferences/shared_preferences.dart'; // Importante para recordar
+// import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:grabadora/screens/recordi_a.dart';
+// import 'package:external_path/external_path.dart'; // <--- NUEVA IMPORTACIÓN
 
 // class SplashScreen extends StatefulWidget {
 //   const SplashScreen({super.key});
@@ -54,7 +55,7 @@
 //   }
 
 //   // --------------------------------------------------------------------------
-//   // FLUJO INTELIGENTE (VERIFICA PERMISOS ANTES DE MOLESTAR)
+//   // FLUJO INTELIGENTE
 //   // --------------------------------------------------------------------------
 
 //   Future<void> _startSmartFlow() async {
@@ -66,6 +67,7 @@
 //     bool storageOk = false;
 
 //     if (Platform.isAndroid) {
+//       // Verificamos manageExternalStorage (Cubre Interno + SD)
 //       storageOk = await Permission.manageExternalStorage.isGranted;
 //     } else {
 //       storageOk = await Permission.storage.isGranted;
@@ -83,7 +85,6 @@
 //     }
 
 //     // CASO 2: Si NO tiene permisos (o es primera vez) -> Mostrar explicación
-//     // Nota: Aunque tenga permisos pero sea la primera vez (hasAcceptedDisclaimer = false), mostramos el aviso.
 //     if (!hasAcceptedDisclaimer) {
 //       _showInitialDisclaimer();
 //     } else {
@@ -93,7 +94,7 @@
 //   }
 
 //   // --------------------------------------------------------------------------
-//   // DIÁLOGO INICIAL (SOLO UNA VEZ EN LA VIDA)
+//   // DIÁLOGO INICIAL (ACTUALIZADO CON SD)
 //   // --------------------------------------------------------------------------
 //   void _showInitialDisclaimer() {
 //     setState(() => _showLoading = false);
@@ -115,8 +116,9 @@
 //           child: Text(
 //             "Para ofrecerte la mejor experiencia, Grabadora Pro PZ necesita acceso a los siguientes servicios:\n\n"
 //             "1. 🎤 **Micrófono:** Para grabar audio de alta calidad.\n"
-//             "2. 📁 **Almacenamiento:** Para guardar tus grabaciones en la carpeta 'GrabadoraProPZ' y gestionar tus archivos.\n\n"
-//             "Sin estos permisos, la aplicación no podrá funcionar correctamente.",
+//             "2. 📱 **Memoria del Teléfono:** Para guardar la app y configuraciones básicas.\n"
+//             "3. 💾 **Tarjeta SD (Memoria Externa):** Para guardar tus grabaciones directamente en tu tarjeta de memoria externa.\n\n"
+//             "Sin estos permisos, la aplicación no podrá gestionar tus archivos.",
 //             style: TextStyle(color: Colors.white70, height: 1.5),
 //           ),
 //         ),
@@ -149,13 +151,26 @@
 //   }
 
 //   // --------------------------------------------------------------------------
-//   // SOLICITUD DE PERMISOS AL SISTEMA
+//   // SOLICITUD DE PERMISOS (ACTUALIZADO PARA SD)
 //   // --------------------------------------------------------------------------
 //   Future<void> _requestPermissionsNow() async {
 //     setState(() => _showLoading = true);
 //     setState(() => _statusMessage = "Configurando Micrófono...");
 
 //     // 1. Pedir Micrófono
+//     bool micGranted = await _requestMicrophone();
+//     if (!micGranted) return;
+
+//     // 2. Pedir Almacenamiento y SD
+//     setState(() => _statusMessage = "Configurando Almacenamiento y SD...");
+//     bool storageGranted = await _requestStorageAndSD();
+
+//     if (storageGranted) {
+//       _navigateToHome();
+//     }
+//   }
+
+//   Future<bool> _requestMicrophone() async {
 //     var micStatus = await Permission.microphone.status;
 //     if (!micStatus.isGranted) {
 //       micStatus = await Permission.microphone.request();
@@ -167,38 +182,65 @@
 //       } else {
 //         _showFatalError("Permiso de micrófono denegado.");
 //       }
-//       return;
+//       return false;
 //     }
+//     return true;
+//   }
 
-//     // 2. Pedir Almacenamiento
-//     setState(() => _statusMessage = "Configurando Almacenamiento...");
-
+//   Future<bool> _requestStorageAndSD() async {
 //     if (Platform.isAndroid) {
+//       // En Android 11+ (SDK 30+), manageExternalStorage es el único camino real para la SD
 //       var storageStatus = await Permission.manageExternalStorage.status;
+
 //       if (!storageStatus.isGranted) {
+//         // Solicitamos el permiso "All files access"
 //         storageStatus = await Permission.manageExternalStorage.request();
 //       }
 
 //       if (!storageStatus.isGranted) {
 //         if (storageStatus.isPermanentlyDenied) {
-//           _showOpenSettingsDialog("Almacenamiento");
+//           _showOpenSettingsDialog("Almacenamiento y SD");
 //         } else {
-//           _showFatalError("Permiso de almacenamiento denegado.");
+//           _showFatalError("Permiso de almacenamiento y SD denegado.");
 //         }
-//         return;
+//         return false;
+//       } else {
+//         // Extra: Verificar si hay tarjeta SD insertada para dar feedback al usuario
+//         _checkSDCardPresence();
 //       }
 //     } else {
+//       // iOS
 //       var storageStatus = await Permission.storage.status;
 //       if (!storageStatus.isGranted) {
 //         storageStatus = await Permission.storage.request();
 //       }
 //       if (!storageStatus.isGranted) {
 //         _showFatalError("Permiso de almacenamiento denegado.");
-//         return;
+//         return false;
 //       }
 //     }
+//     return true;
+//   }
 
-//     _navigateToHome();
+//   // Comprobación opcional para informar al usuario si detectamos una SD
+//   // Comprobación opcional para informar al usuario si detectamos una SD
+//   Future<void> _checkSDCardPresence() async {
+//     try {
+//       // external_path ayuda a listar los directorios disponibles
+//       // Usamos ?? [] para manejar si devuelve null
+//       List<String> paths =
+//           await ExternalPath.getExternalStorageDirectories() ?? [];
+
+//       // Si hay más de una ruta, asumimos que hay una tarjeta SD insertada
+//       if (paths.length > 1) {
+//         if (mounted) {
+//           setState(() => _statusMessage = "¡Tarjeta SD detectada!");
+//         }
+//       }
+//     } catch (e) {
+//       // Ignoramos errores en esta detección, no es crítica
+//       print("Error detectando SD: $e");
+//     }
 //   }
 
 //   // --------------------------------------------------------------------------
@@ -410,8 +452,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:grabadora/screens/recordi_a.dart';
-import 'package:external_path/external_path.dart'; // <--- NUEVA IMPORTACIÓN
+import 'package:grabadora/screens/recordi_a.dart'; // Asegúrate que esta ruta sea correcta
+import 'package:external_path/external_path.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -428,7 +470,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   // Estados de la UI
   bool _showLoading = true;
-  String _statusMessage = "Iniciando...";
+  String _statusMessage = "Verificando permisos...";
 
   @override
   void initState() {
@@ -456,51 +498,48 @@ class _SplashScreenState extends State<SplashScreen>
 
     _mainController.forward();
 
-    // 2. Iniciar el flujo inteligente
+    // 2. Iniciar el flujo INMEDIATAMENTE (sin espera forzada de 2 segundos)
     _startSmartFlow();
   }
 
   // --------------------------------------------------------------------------
-  // FLUJO INTELIGENTE
+  // FLUJO INTELIGENTE CORREGIDO
   // --------------------------------------------------------------------------
 
   Future<void> _startSmartFlow() async {
-    // Esperamos animación
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Verificamos si ya tenemos los permisos concedidos
-    bool micOk = await Permission.microphone.isGranted;
-    bool storageOk = false;
-
-    if (Platform.isAndroid) {
-      // Verificamos manageExternalStorage (Cubre Interno + SD)
-      storageOk = await Permission.manageExternalStorage.isGranted;
-    } else {
-      storageOk = await Permission.storage.isGranted;
-    }
-
-    // Verificamos si el usuario YA había visto y aceptado el aviso antes
+    // Leemos el estado del disclaimer
     final prefs = await SharedPreferences.getInstance();
     final bool hasAcceptedDisclaimer =
         prefs.getBool('user_accepted_disclaimer') ?? false;
 
-    // CASO 1: Si TENEMOS permisos Y YA aceptó el aviso -> IR DIRECTO A LA APP
-    if (micOk && storageOk && hasAcceptedDisclaimer) {
-      _navigateToHome();
+    // Verificamos el estado ACTUAL de los permisos
+    bool micOk = await Permission.microphone.isGranted;
+
+    // Usamos una sola línea para verificar almacenamiento, permission_handler abstrae la plataforma
+    bool storageOk =
+        await Permission.manageExternalStorage.isGranted ||
+        await Permission.storage.isGranted;
+
+    // CASO 1: Si TENEMOS permisos concedidos -> IR DIRECTO A LA APP
+    // No importa si hasAcceptedDisclaimer es true o false. Si tenemos permisos, entramos.
+    if (micOk && storageOk) {
+      // Pequeño delay solo visual para que se vea el logo, pero la lógica ya pasó
+      if (mounted) _navigateToHome();
       return;
     }
 
-    // CASO 2: Si NO tiene permisos (o es primera vez) -> Mostrar explicación
+    // CASO 2: Si NO tiene permisos -> Mostrar explicación (Disclaimer)
     if (!hasAcceptedDisclaimer) {
       _showInitialDisclaimer();
     } else {
-      // Si ya aceptó el aviso pero le quitó los permisos manualmente, pedimos permisos directamente
+      // CASO 3: Aceptó el disclaimer antes, pero revocó los permisos
+      // Pedimos permisos directamente
       _requestPermissionsNow();
     }
   }
 
   // --------------------------------------------------------------------------
-  // DIÁLOGO INICIAL (ACTUALIZADO CON SD)
+  // DIÁLOGO INICIAL
   // --------------------------------------------------------------------------
   void _showInitialDisclaimer() {
     setState(() => _showLoading = false);
@@ -522,9 +561,8 @@ class _SplashScreenState extends State<SplashScreen>
           child: Text(
             "Para ofrecerte la mejor experiencia, Grabadora Pro PZ necesita acceso a los siguientes servicios:\n\n"
             "1. 🎤 **Micrófono:** Para grabar audio de alta calidad.\n"
-            "2. 📱 **Memoria del Teléfono:** Para guardar la app y configuraciones básicas.\n"
-            "3. 💾 **Tarjeta SD (Memoria Externa):** Para guardar tus grabaciones directamente en tu tarjeta de memoria externa.\n\n"
-            "Sin estos permisos, la aplicación no podrá gestionar tus archivos.",
+            "2. 📱 **Memoria del Teléfono y SD:** Para guardar tus grabaciones de forma segura.\n\n"
+            "Sin estos permisos, la aplicación no podrá funcionar.",
             style: TextStyle(color: Colors.white70, height: 1.5),
           ),
         ),
@@ -539,11 +577,11 @@ class _SplashScreenState extends State<SplashScreen>
             onPressed: () async {
               Navigator.pop(context);
 
-              // --- IMPORTANTE: GUARDAR QUE YA LO ACEPTÓ ---
+              // --- GUARDAR QUE ACEPTÓ EL AVISO ---
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('user_accepted_disclaimer', true);
 
-              // Ahora sí pedimos permisos
+              // Pedir permisos
               _requestPermissionsNow();
             },
             style: ElevatedButton.styleFrom(
@@ -557,21 +595,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   // --------------------------------------------------------------------------
-  // SOLICITUD DE PERMISOS (ACTUALIZADO PARA SD)
+  // SOLICITUD DE PERMISOS
   // --------------------------------------------------------------------------
   Future<void> _requestPermissionsNow() async {
     setState(() => _showLoading = true);
-    setState(() => _statusMessage = "Configurando Micrófono...");
+    setState(() => _statusMessage = "Solicitando Micrófono...");
 
     // 1. Pedir Micrófono
     bool micGranted = await _requestMicrophone();
     if (!micGranted) return;
 
-    // 2. Pedir Almacenamiento y SD
-    setState(() => _statusMessage = "Configurando Almacenamiento y SD...");
+    // 2. Pedir Almacenamiento
+    setState(() => _statusMessage = "Solicitando acceso a Almacenamiento...");
     bool storageGranted = await _requestStorageAndSD();
 
     if (storageGranted) {
+      _checkSDCardPresence(); // Feedback opcional
+      // Esperamos un momento para que el usuario vea el mensaje de éxito si se desea
+      await Future.delayed(const Duration(milliseconds: 500));
       _navigateToHome();
     }
   }
@@ -594,58 +635,45 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<bool> _requestStorageAndSD() async {
-    if (Platform.isAndroid) {
-      // En Android 11+ (SDK 30+), manageExternalStorage es el único camino real para la SD
-      var storageStatus = await Permission.manageExternalStorage.status;
+    // Intentar pedir ManageExternalStorage (Android 11+)
+    // Nota: En algunos dispositivos Huawei, esto podría requerir lógica extra,
+    // pero permission_handler suele manejar el caso estándar.
 
-      if (!storageStatus.isGranted) {
-        // Solicitamos el permiso "All files access"
-        storageStatus = await Permission.manageExternalStorage.request();
-      }
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.storage, // Fallback para Android < 11
+      Permission.manageExternalStorage, // Para Android 11+ y SD
+    ].request();
 
-      if (!storageStatus.isGranted) {
-        if (storageStatus.isPermanentlyDenied) {
-          _showOpenSettingsDialog("Almacenamiento y SD");
-        } else {
-          _showFatalError("Permiso de almacenamiento y SD denegado.");
-        }
-        return false;
+    bool storageOk = statuses[Permission.storage]?.isGranted ?? false;
+    bool manageOk =
+        statuses[Permission.manageExternalStorage]?.isGranted ?? false;
+
+    // Aceptamos si tenemos cualquiera de los dos (el que aplique al SO)
+    if (!storageOk && !manageOk) {
+      // Verificar si fue denegado permanentemente para abrir ajustes
+      if (statuses[Permission.manageExternalStorage]!.isPermanentlyDenied) {
+        _showOpenSettingsDialog("Almacenamiento");
       } else {
-        // Extra: Verificar si hay tarjeta SD insertada para dar feedback al usuario
-        _checkSDCardPresence();
-      }
-    } else {
-      // iOS
-      var storageStatus = await Permission.storage.status;
-      if (!storageStatus.isGranted) {
-        storageStatus = await Permission.storage.request();
-      }
-      if (!storageStatus.isGranted) {
         _showFatalError("Permiso de almacenamiento denegado.");
-        return false;
       }
+      return false;
     }
+
     return true;
   }
 
-  // Comprobación opcional para informar al usuario si detectamos una SD
-  // Comprobación opcional para informar al usuario si detectamos una SD
+  // Comprobación opcional SD
   Future<void> _checkSDCardPresence() async {
     try {
-      // external_path ayuda a listar los directorios disponibles
-      // Usamos ?? [] para manejar si devuelve null
       List<String> paths =
           await ExternalPath.getExternalStorageDirectories() ?? [];
-
-      // Si hay más de una ruta, asumimos que hay una tarjeta SD insertada
       if (paths.length > 1) {
         if (mounted) {
-          setState(() => _statusMessage = "¡Tarjeta SD detectada!");
+          setState(() => _statusMessage = "¡Tarjeta SD lista!");
         }
       }
     } catch (e) {
-      // Ignoramos errores en esta detección, no es crítica
-      print("Error detectando SD: $e");
+      print("Error SD: $e");
     }
   }
 
@@ -661,12 +689,11 @@ class _SplashScreenState extends State<SplashScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: const Text(
-          "Permiso Denegado",
-          style: TextStyle(color: Colors.redAccent),
+          "Permiso Necesario",
+          style: TextStyle(color: Colors.orange),
         ),
         content: Text(
-          "Has denegado el acceso a $permName permanentemente.\n\n"
-          "Debes habilitarlo manualmente en la configuración de tu sistema.",
+          "Debes habilitar el acceso a $permName en los ajustes de tu teléfono para continuar.",
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -679,7 +706,7 @@ class _SplashScreenState extends State<SplashScreen>
               await openAppSettings();
             },
             icon: const Icon(Icons.settings),
-            label: const Text("Ir a Ajustes"),
+            label: const Text("Abrir Ajustes"),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orangeAccent,
             ),
@@ -696,12 +723,12 @@ class _SplashScreenState extends State<SplashScreen>
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text("Error", style: TextStyle(color: Colors.red)),
+        title: const Text("Atención", style: TextStyle(color: Colors.red)),
         content: Text(message, style: const TextStyle(color: Colors.white)),
         actions: [
           ElevatedButton(
             onPressed: () => SystemNavigator.pop(),
-            child: const Text("Cerrar"),
+            child: const Text("Cerrar App"),
           ),
         ],
       ),
@@ -789,6 +816,7 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Colors.grey,
                           fontSize: 12,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
                       _buildLoadingDots(),
@@ -841,7 +869,7 @@ class _AnimatedDot extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 5),
             width: 12,
             height: 12,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.deepPurpleAccent,
               shape: BoxShape.circle,
             ),
