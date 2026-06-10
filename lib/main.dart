@@ -1,19 +1,25 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:grabadora/screens/tema.dart';
-import 'package:provider/provider.dart'; // 1. Importar provider
-import 'package:grabadora/screens/intro.dart';
-import 'package:grabadora/screens/recordi_a.dart';
+import 'package:grabadora/screens/intro.dart'; // Asegúrate que SplashScreen esté aquí o ajusta
+import 'package:grabadora/screens/servicios.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
-// IMPORTANTE: Asegúrate de que ThemeProvider esté accesible.
-// Si lo dejaste en 'recordi_a.dart', no necesitas importarlo aquí si usas MultiProvider o lo pasas,
-// pero lo ideal es tenerlo en un archivo separado (ej. config/theme_provider.dart) o importarlo aquí.
-// Asumiré que ThemeProvider está definido en 'recordi_a.dart' según el código anterior.
-import 'package:grabadora/screens/recordi_a.dart';
+// --------------------------------------------------------------------------
+// IMPORTA AQUÍ TUS PANTALLAS Y CLASES DE PROYECTO
+// --------------------------------------------------------------------------
+import 'package:grabadora/screens/tema.dart';
+import 'package:grabadora/screens/recordi_a.dart' hide ThemeProvider;
+// Ya NO importamos floating_screen.dart aquí
 
-void main() {
+// --------------------------------------------------------------------------
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ELIMINAMOS el registro porque tu versión del paquete no lo usa así
+
   runApp(const MyApp());
 }
 
@@ -23,70 +29,113 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      // 2. Crear y proveer la instancia del ThemeProvider
       create: (_) => ThemeProvider(),
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'Grabadora Pro Dark',
+            title: 'Grabadora Pro PZ',
             debugShowCheckedModeBanner: false,
-
-            // 3. Usamos el tema dinámico del provider
             theme: themeProvider.currentTheme,
-
-            // Eliminamos la configuración estática de arriba, ya que 'currentTheme' maneja todo.
-            // 'currentTheme' internamente decide si usar el esquema oscuro o claro.
-            home: const SplashScreen(),
+            home: const SplashScreen(), // Asegúrate que SplashScreen existe
           );
         },
       ),
     );
   }
 }
+// --------------------------------------------------------------------------
+// PANTALLA DE CARGA (SPLASH SCREEN)
+// --------------------------------------------------------------------------
+// class SplashScreen extends StatefulWidget {
+//   const SplashScreen({super.key});
 
-// =========================================================================
-// // MODELO DE DATOS PARA PERSISTENCIA
-// // =========================================================================
-// class Recording {
-//   String path;
-//   String name;
-//   final String date;
-
-//   Recording({required this.path, required this.name, required this.date});
-
-//   Map<String, dynamic> toMap() => {'path': path, 'name': name, 'date': date};
-
-//   factory Recording.fromMap(Map<String, dynamic> map) =>
-//       Recording(path: map['path'], name: map['name'], date: map['date'] ?? '');
+//   @override
+//   State<SplashScreen> createState() => _SplashScreenState();
 // }
 
-// =========================================================================
-// CLASE PARA ENVIAR Y GESTIONAR LAS GRABACIONES (ALMACENAMIENTO/COMPARTIR)
-// =========================================================================
+// class _SplashScreenState extends State<SplashScreen> {
+//   @override
+//   void initState() {
+//     super.initState();
+//     _navigateToHome();
+//   }
+
+//   Future<void> _navigateToHome() async {
+//     // Simula una carga o realiza comprobaciones iniciales (permisos, etc.)
+//     await Future.delayed(const Duration(seconds: 2));
+
+//     if (!mounted) return;
+
+//     // Navega a tu pantalla principal (asegúrate de que RecorderScreen esté importada o accesible)
+//     // Nota: En el código anterior, RecorderScreen estaba en 'recordi_a.dart'.
+//     // Si ese archivo contiene la clase RecorderScreen, impórtalo arriba.
+//     Navigator.pushReplacement(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => const RecorderScreen(),
+//         // Asegúrate de importar RecorderScreen o cambiarlo por tu pantalla principal real.
+//         // Ejemplo: import 'package:grabadora/screens/recordi_a.dart';
+//         // asumiendo que RecorderScreen está ahí.
+//       ),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
+
+//     return Scaffold(
+//       backgroundColor: theme.scaffoldBackgroundColor,
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             // Puedes poner tu logo aquí
+//             Icon(Icons.mic, size: 80, color: theme.colorScheme.primary),
+//             const SizedBox(height: 20),
+//             Text('Grabadora Pro PZ', style: theme.textTheme.headlineMedium),
+//             const SizedBox(height: 40),
+//             const CircularProgressIndicator(color: Colors.blueGrey),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// --------------------------------------------------------------------------
+// SERVICIO AUXILIAR: AUDIO SENDER
+// --------------------------------------------------------------------------
+/// Clase estática para gestionar el envío de archivos a otras apps
 class AudioSenderService {
   /// Envía el archivo de audio usando las aplicaciones del dispositivo
-  /// (WhatsApp, Gmail, Guardar en Archivos, etc.)
   static Future<void> sendAudioFile(
     BuildContext context,
     String filePath,
   ) async {
     final file = File(filePath);
 
+    // Verifica si el archivo existe antes de intentar compartirlo
     if (!await file.exists()) {
-      _showSnackBar(context, "El archivo de audio no existe.");
+      if (context.mounted) {
+        _showSnackBar(context, "El archivo de audio no existe.");
+      }
       return;
     }
 
     try {
-      // Obtenemos el nombre del archivo de la ruta completa
-      final String fileName = filePath.split('/').last;
+      // Obtenemos el nombre del archivo
+      final String fileName = filePath.split(Platform.pathSeparator).last;
 
-      // Despliega la hoja nativa para compartir el archivo o guardarlo en el dispositivo
+      // Comparte el archivo usando el sistema nativo (WhatsApp, Telegram, etc.)
       await Share.shareXFiles([
         XFile(filePath),
-      ], text: 'Te comparto mi grabación de audio: $fileName');
+      ], text: 'Aquí tienes mi grabación: $fileName');
     } catch (e) {
-      _showSnackBar(context, "Error al intentar enviar el archivo: $e");
+      debugPrint("Error compartiendo archivo: $e");
+      if (context.mounted) {
+        _showSnackBar(context, "Error al compartir: ${e.toString()}");
+      }
     }
   }
 

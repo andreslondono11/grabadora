@@ -866,7 +866,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.info_outline, color: Colors.deepPurpleAccent),
+            Icon(Icons.info_outline, color: Colors.blueGrey, size: 24),
             const SizedBox(width: 10),
             Text("Acerca de la App", style: TextStyle(color: textColor)),
           ],
@@ -886,7 +886,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Versión 10.0.0 - Lanzada en Junio 2024",
+                "Versión 11.0.0 - Lanzada en Junio 2026",
                 style: TextStyle(
                   color: textColor.withOpacity(0.7),
                   fontSize: 14,
@@ -908,22 +908,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 4),
               _buildBulletPoint(
-                "📁 Organización de archivos en carpetas personalizadas.",
+                "📁 Organización inteligente por carpetas.",
                 textColor,
               ),
               const SizedBox(height: 4),
               _buildBulletPoint(
-                "🎧 Reproductor de audio integrado con control deslizante.",
+                "🎧 Reproductor integrado con control de velocidad.",
                 textColor,
               ),
               const SizedBox(height: 4),
               _buildBulletPoint(
-                "📤 Compartir grabaciones fácilmente.",
+                "📤 Compartir archivos por WhatsApp, Email, etc.",
                 textColor,
               ),
               const SizedBox(height: 4),
               _buildBulletPoint(
-                "🌓 Interfaz adaptable (Modo Oscuro / Claro).",
+                "🌗 Temas Claro y Oscuro personalizables.",
+                textColor,
+              ),
+              const SizedBox(height: 4),
+              _buildBulletPoint(
+                "💾 Soporte para Memoria SD Externa.",
+                textColor,
+              ),
+              const SizedBox(height: 4),
+              _buildBulletPoint(
+                "🔊 Visualizador de ondas de audio.",
+                textColor,
+              ),
+              const SizedBox(height: 4),
+              _buildBulletPoint("⚙️ Formatos: AAC, WAV y FLAC.", textColor),
+              const SizedBox(height: 4),
+              _buildBulletPoint(
+                "✂️ Recortar y editar metadatos básicos.",
+                textColor,
+              ),
+              const SizedBox(height: 4),
+              _buildBulletPoint(
+                "🔒 Bloqueo de pantalla para evitar apagados.",
+                textColor,
+              ),
+              const SizedBox(height: 4),
+              _buildBulletPoint(
+                "🔄 Gestión fácil: Renombrar, Mover y Eliminar.",
                 textColor,
               ),
             ],
@@ -932,10 +959,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Entendido",
-              style: TextStyle(color: Colors.deepPurpleAccent),
-            ),
+            child: Text("Entendido", style: TextStyle(color: Colors.blueGrey)),
           ),
         ],
       ),
@@ -968,7 +992,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtitleColor = isDark ? Colors.white70 : Colors.black54;
-    final iconColor = isDark ? Colors.deepPurpleAccent : Colors.deepPurple;
+    final iconColor = isDark ? Colors.blueGrey : Colors.blueGrey;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -1230,7 +1254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             child: Row(
               children: [
-                Icon(Icons.sd_card, color: Colors.deepPurpleAccent, size: 20),
+                Icon(Icons.sd_card, color: Colors.blueGrey, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -1239,7 +1263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Text(
                         "Tarjeta SD / Memoria USB",
                         style: TextStyle(
-                          color: Colors.deepPurpleAccent,
+                          color: Colors.blueGrey,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1456,7 +1480,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitleColor: subtitleColor,
       icon: Icons.info,
       title: "Versión de la App",
-      subtitle: "Versión 10.0.0",
+      subtitle: "Versión 11.0.0",
       trailing: const Icon(Icons.chevron_right, color: Colors.transparent),
       onTap: _showAppInfoDialog,
     );
