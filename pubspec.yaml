@@ -29,7 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   audio_recorder_service: ^0.0.1
-  audioplayers: ^6.6.0
+  audioplayers: ^6.7.1
   cupertino_icons: ^1.0.8
   external_path: ^2.2.0
 
@@ -44,7 +44,7 @@ dependencies:
   shared_preferences: ^2.0.15
   url_launcher: ^6.3.2
   wakelock_plus: ^1.6.1
-  # flutter_local_notifications: 
+  flutter_local_notifications: 
   flutter_overlay_window:
 dev_dependencies:
   flutter_lints: ^6.0.0

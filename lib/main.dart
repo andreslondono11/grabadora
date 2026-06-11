@@ -1,17 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:grabadora/screens/intro.dart'; // Asegúrate que SplashScreen esté aquí o ajusta
-import 'package:grabadora/screens/servicios.dart';
+
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 // --------------------------------------------------------------------------
 // IMPORTA AQUÍ TUS PANTALLAS Y CLASES DE PROYECTO
 // --------------------------------------------------------------------------
 import 'package:grabadora/screens/tema.dart';
-import 'package:grabadora/screens/recordi_a.dart' hide ThemeProvider;
-// Ya NO importamos floating_screen.dart aquí
 
 // --------------------------------------------------------------------------
 
