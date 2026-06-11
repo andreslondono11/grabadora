@@ -1,17 +1,35 @@
-# grabadora
+# 🎙️ Grabadora Pro PZ
 
-A new Flutter project.
+Grabadora Pro PZ es una aplicación móvil desarrollada en **Flutter** que permite grabar audio de alta calidad, organizar tus archivos y controlarlos fácilmente desde notificaciones en segundo plano.  
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📦 Características Principales
 
-A few resources to get you started if this is your first Flutter project:
+- 🎤 **Grabación de voz de alta calidad**  
+- 📁 **Organización inteligente por carpetas**  
+- 🎧 **Reproductor integrado con control de velocidad**  
+- 📤 **Compartir archivos por WhatsApp, Email, etc.**  
+- 🌗 **Temas Claro y Oscuro personalizables**  
+- 💾 **Soporte para Memoria SD Externa**  
+- 🔊 **Visualizador de ondas de audio**  
+- ⚙️ **Formatos soportados: AAC, OGG y FLAC**  
+- ✂️ **Recortar y editar metadatos básicos**  
+- 🔒 **Bloqueo de pantalla para evitar apagados**  
+- 🔄 **Gestión fácil: Renombrar, Mover y Eliminar**  
+- 🔔 **Control de grabación desde notificaciones (Segundo Plano)**  
+- 👁️ **Interfaz limpia: sin notificaciones intrusivas mientras usas la app**  
+- ⏯️ **Pausar, Reanudar y Detener sin volver a abrir la app**
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📱 Capturas de Pantalla
+*(Agrega aquí imágenes de la app en funcionamiento, por ejemplo: grabación activa, reproductor, modo oscuro/claro, etc.)*
+
+---
+
+## 🚀 Instalación
+
+1. Clona este repositorio:
+   ```bash
+   git clone https://github.com/tuusuario/grabadora-pro-pz.git
